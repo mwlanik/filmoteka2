@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filmoteka</title>
+    <link rel="stylesheet" th:href="@{/style/style.css}">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="navbar-brand">FILMOTeka</div>
+        <div class="navbar-search">
+            <input type="text" id="searchInput" class="search-input" placeholder="Szukaj filmów...">
+        </div>
+        <nav class="navbar-nav">
+            <a th:href="@{/add}" class="nav-button">+ Dodaj film</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <h1 class="section-title">Oglądaj teraz</h1>
+
+        <div class="movie-grid">
+            <div class="movie-card" th:each="film : ${filmy}" th:data-id="${film.id}" th:data-title="${film.title}">
+                <button class="delete-btn" title="Usuń film">✕</button>
+                <div class="movie-poster">
+                    <img th:src="${film.posterUrl}" th:alt="${film.title}" loading="lazy"/>
+                    <div class="movie-overlay">
+                        <p th:text="${film.description}"></p>
+                    </div>
+                </div>
+                <div class="movie-info">
+                    <h3 class="movie-title" th:text="${film.title}"></h3>
+                    <div class="movie-meta">
+                        <span class="movie-year" th:text="${film.year}"></span>
+                        <span class="movie-genre" th:text="${film.genre}"></span>
+                    </div>
+                    <p class="movie-director" th:text="'Reżyser: ' + ${film.director}"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.movie-card');
+            cards.forEach(card => {
+                const title = card.querySelector('.movie-title')?.textContent.toLowerCase() || '';
+                const director = card.querySelector('.movie-director')?.textContent.toLowerCase() || '';
+                const genre = card.querySelector('.movie-genre')?.textContent.toLowerCase() || '';
+                const year = card.querySelector('.movie-year')?.textContent.toLowerCase() || '';
+                const match = !query || title.includes(query) || director.includes(query) || genre.includes(query) || year.includes(query);
+                card.style.display = match ? '' : 'none';
+            });
+        });
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const card = this.closest('.movie-card');
+                const id = card.dataset.id;
+                const title = card.dataset.title;
+                if (confirm('Czy na pewno chcesz usunąć film: "' + title + '"?')) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/delete/' + id;
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

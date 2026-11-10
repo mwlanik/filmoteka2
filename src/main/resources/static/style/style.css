@@ -1,0 +1,450 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #141414;
+    color: #e5e5e5;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+}
+
+/* ── Navbar ── */
+
+.navbar {
+    display: flex;
+    align-items: center;
+    padding: 16px 48px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar-brand {
+    font-size: 28px;
+    font-weight: 700;
+    color: #e50914;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* ── Navbar Search ── */
+
+.navbar-search {
+    flex: 1;
+    max-width: 400px;
+    margin: 0 24px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 16px;
+    background-color: rgba(0, 0, 0, 0.75);
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #e5e5e5;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.search-input::placeholder {
+    color: #888;
+}
+
+.search-input:focus {
+    border-color: #e50914;
+}
+
+/* ── Navbar Navigation ── */
+
+.navbar-nav {
+    margin-left: auto;
+}
+
+.nav-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #e50914;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.nav-button:hover {
+    background-color: #f6121d;
+}
+
+/* ── Container ── */
+
+.container {
+    padding: 0 48px 60px;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 24px 0 16px;
+    color: #fff;
+}
+
+/* ── Movie Grid ── */
+
+.movie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 24px;
+}
+
+/* ── Movie Card ── */
+
+.movie-card {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+/* ── Delete Button ── */
+
+.delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    width: 32px;
+    height: 32px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #e5e5e5;
+    border: 1px solid #555;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.movie-card:hover .delete-btn {
+    opacity: 1;
+}
+
+.delete-btn:hover {
+    background-color: #e50914;
+    border-color: #e50914;
+    color: #fff;
+}
+
+.movie-card:hover {
+    transform: scale(1.08);
+    z-index: 10;
+}
+
+.movie-poster {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    aspect-ratio: 2 / 3;
+    background-color: #1f1f1f;
+}
+
+.movie-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* ── Hover Overlay ── */
+
+.movie-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.6) 60%, transparent 100%);
+    display: flex;
+    align-items: flex-end;
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.movie-card:hover .movie-overlay {
+    opacity: 1;
+}
+
+.movie-overlay p {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #ddd;
+}
+
+/* ── Movie Info ── */
+
+.movie-info {
+    padding: 10px 0 4px;
+}
+
+.movie-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.movie-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: #aaa;
+}
+
+.movie-genre {
+    color: #54b948;
+    font-weight: 500;
+}
+
+.movie-director {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 12px 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .navbar-search {
+        order: 3;
+        max-width: 100%;
+        margin: 0;
+        flex-basis: 100%;
+    }
+
+    .container {
+        padding: 0 20px 40px;
+    }
+
+    .movie-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 16px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+/* ── Brand Link ── */
+
+.brand-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* ── Form Container ── */
+
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding-top: 40px;
+}
+
+.add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Form Groups ── */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 10px 12px;
+    background-color: #2f2f2f;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #e5e5e5;
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #e50914;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #888;
+}
+
+.form-hint {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* ── Form Row (side-by-side fields) ── */
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+/* ── Form Actions ── */
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.btn-primary {
+    display: inline-block;
+    padding: 10px 24px;
+    background-color: #e50914;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #f6121d;
+}
+
+.btn-secondary {
+    display: inline-block;
+    padding: 10px 24px;
+    background-color: #333;
+    color: #e5e5e5;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #444;
+}
+
+/* ── Autocomplete Dropdown ── */
+
+.autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.autocomplete-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    background-color: #1f1f1f;
+    border: 1px solid #444;
+    border-radius: 4px;
+    margin-top: 4px;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.search-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #2f2f2f;
+    transition: background-color 0.15s ease;
+}
+
+.search-item:last-child {
+    border-bottom: none;
+}
+
+.search-item:hover,
+.search-item.active {
+    background-color: #333;
+}
+
+.search-item strong {
+    display: block;
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.search-cast {
+    display: block;
+    color: #888;
+    font-size: 12px;
+}
+
+/* ── Poster Preview ── */
+
+.poster-preview {
+    display: none;
+    text-align: center;
+}
+
+.poster-preview-label {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.poster-preview-image {
+    display: flex;
+    justify-content: center;
+}
+
+.poster-preview-image img {
+    max-width: 200px;
+    max-height: 300px;
+    border-radius: 6px;
+    object-fit: cover;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}

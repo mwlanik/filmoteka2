@@ -37,3 +37,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### App Data ###
+data/
+/.junie/plans/add-movies-list-page.md

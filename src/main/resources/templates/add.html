@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dodaj film — Filmoteka</title>
+    <link rel="stylesheet" th:href="@{/style/style.css}">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="navbar-brand">
+            <a th:href="@{/}" class="brand-link">FILMOTeka</a>
+        </div>
+    </header>
+
+    <main class="container form-container">
+        <h1 class="section-title">Dodaj nowy film</h1>
+
+        <form class="add-form" th:action="@{/add}" method="post">
+            <div class="form-group">
+                <label for="title">Tytuł *</label>
+                <div class="autocomplete-wrapper">
+                    <input type="text" id="title" name="title" required placeholder="Wpisz tytuł filmu, np. Incepcja"
+                           autocomplete="off"/>
+                    <div id="search-results" class="autocomplete-dropdown"></div>
+                </div>
+                <small class="form-hint">Wpisz tytuł — sugestie z Filmwebu wypełnią pozostałe pola.</small>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="year">Rok *</label>
+                    <input type="number" id="year" name="year" required min="1888" max="2099" placeholder="np. 2010"/>
+                </div>
+                <div class="form-group">
+                    <label for="genre">Gatunek</label>
+                    <input type="text" id="genre" name="genre" placeholder="np. Sci-Fi"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="director">Reżyser</label>
+                <input type="text" id="director" name="director" placeholder="np. Christopher Nolan"/>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Opis</label>
+                <textarea id="description" name="description" rows="3" placeholder="Krótki opis filmu..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="posterUrl">URL plakatu</label>
+                <input type="url" id="posterUrl" name="posterUrl" placeholder="https://..."/>
+                <small class="form-hint">Opcjonalne — jeśli puste, wyświetlony zostanie placeholder z tytułem.</small>
+            </div>
+
+            <div class="poster-preview" id="posterPreview">
+                <span class="poster-preview-label">Podgląd plakatu</span>
+                <div class="poster-preview-image">
+                    <img id="previewImg" src="" alt="Podgląd plakatu"/>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Dodaj film</button>
+                <a th:href="@{/}" class="btn-secondary">Anuluj</a>
+            </div>
+        </form>
+    </main>
+
+    <script>
+    (function() {
+        const titleInput = document.getElementById('title');
+        const dropdown = document.getElementById('search-results');
+        let searchTimeout = null;
+
+        titleInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                hideDropdown();
+                return;
+            }
+
+            searchTimeout = setTimeout(() => searchFilms(query), 300);
+        });
+
+        titleInput.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.search-item');
+            const active = dropdown.querySelector('.search-item.active');
+            let idx = Array.from(items).indexOf(active);
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!active && items.length > 0) {
+                    items[0].classList.add('active');
+                } else if (idx < items.length - 1) {
+                    active.classList.remove('active');
+                    items[idx + 1].classList.add('active');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (active) {
+                    active.classList.remove('active');
+                    if (idx > 0) {
+                        items[idx - 1].classList.add('active');
+                    }
+                }
+            } else if (e.key === 'Enter' && active) {
+                e.preventDefault();
+                active.click();
+            } else if (e.key === 'Escape') {
+                hideDropdown();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!titleInput.contains(e.target) && !dropdown.contains(e.target)) {
+                hideDropdown();
+            }
+        });
+
+        function searchFilms(query) {
+            fetch('/api/search?q=' + encodeURIComponent(query))
+                .then(res => res.json())
+                .then(hits => {
+                    if (hits.length === 0) {
+                        hideDropdown();
+                        return;
+                    }
+                    dropdown.innerHTML = '';
+                    hits.forEach(hit => {
+                        const item = document.createElement('div');
+                        item.className = 'search-item';
+                        let html = '<strong>' + escapeHtml(hit.title) + '</strong>';
+                        if (hit.mainCast) {
+                            html += '<span class="search-cast">' + escapeHtml(hit.mainCast) + '</span>';
+                        }
+                        item.innerHTML = html;
+                        item.addEventListener('click', () => selectFilm(hit.id, hit.title));
+                        dropdown.appendChild(item);
+                    });
+                    dropdown.style.display = 'block';
+                })
+                .catch(() => hideDropdown());
+        }
+
+        function selectFilm(id, title) {
+            titleInput.value = title;
+            hideDropdown();
+
+            const hint = titleInput.parentElement.querySelector('.form-hint');
+            if (hint) hint.textContent = 'Wczytywanie danych z Filmwebu...';
+
+            fetch('/api/film/' + id)
+                .then(res => {
+                    if (!res.ok) throw new Error('Not found');
+                    return res.json();
+                })
+                .then(details => {
+                    document.getElementById('year').value = details.year || '';
+                    document.getElementById('genre').value = details.genre || '';
+                    document.getElementById('director').value = details.director || '';
+                    document.getElementById('description').value = details.description || '';
+                    if (details.posterUrl) {
+                        document.getElementById('posterUrl').value = details.posterUrl;
+                        updatePosterPreview(details.posterUrl);
+                    }
+                    if (hint) hint.textContent = '✓ Dane załadowane z Filmwebu';
+                    hint.style.color = '#54b948';
+                })
+                .catch(() => {
+                    if (hint) {
+                        hint.textContent = 'Wpisz pozostałe dane ręcznie.';
+                        hint.style.color = '#888';
+                    }
+                });
+        }
+
+        function hideDropdown() {
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+        }
+
+        function updatePosterPreview(url) {
+            const preview = document.getElementById('posterPreview');
+            const img = document.getElementById('previewImg');
+            if (url) {
+                img.src = url;
+                preview.style.display = 'block';
+            } else {
+                img.src = '';
+                preview.style.display = 'none';
+            }
+        }
+
+        document.getElementById('posterUrl').addEventListener('input', function() {
+            updatePosterPreview(this.value.trim());
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    })();
+    </script>
+
+</body>
+</html>
