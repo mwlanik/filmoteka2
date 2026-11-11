@@ -23,12 +23,16 @@
 
         <div class="movie-grid">
             <div class="movie-card" th:each="film : ${filmy}" th:data-id="${film.id}" th:data-title="${film.title}">
-                <button class="delete-btn" title="Usuń film">✕</button>
+                <div class="card-actions">
+                    <a class="action-btn edit-btn" th:href="@{'/edit/' + ${film.id}}" title="Edytuj film">✎</a>
+                    <button class="action-btn delete-btn" title="Usuń film">✕</button>
+                </div>
                 <div class="movie-poster">
                     <img th:src="${film.posterUrl}" th:alt="${film.title}" loading="lazy"/>
                     <div class="movie-overlay">
                         <p th:text="${film.description}"></p>
                     </div>
+                    <a class="play-btn" th:href="${film.videoUrl}" th:title="'Odtwórz: ' + ${film.title}" th:if="${film.videoUrl != null}">▶</a>
                 </div>
                 <div class="movie-info">
                     <h3 class="movie-title" th:text="${film.title}"></h3>
@@ -71,6 +75,7 @@
                 }
             });
         });
+
     </script>
 
 </body>

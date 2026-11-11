@@ -111,36 +111,82 @@ body {
     transition: transform 0.3s ease;
 }
 
-/* ── Delete Button ── */
+/* ── Card Actions (Edit + Delete) ── */
 
-.delete-btn {
+.card-actions {
     position: absolute;
     top: 8px;
     right: 8px;
     z-index: 10;
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.movie-card:hover .card-actions {
+    opacity: 1;
+}
+
+.action-btn {
     width: 32px;
     height: 32px;
     background-color: rgba(0, 0, 0, 0.7);
     color: #e5e5e5;
     border: 1px solid #555;
     border-radius: 50%;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s ease, background-color 0.2s ease;
+    text-decoration: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.movie-card:hover .delete-btn {
-    opacity: 1;
-}
-
-.delete-btn:hover {
+.action-btn:hover {
     background-color: #e50914;
     border-color: #e50914;
     color: #fff;
+}
+
+.edit-btn:hover {
+    background-color: #333;
+    border-color: #888;
+}
+
+/* ── Play Button (on poster) ── */
+
+.play-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    width: 56px;
+    height: 56px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 0.3s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.movie-card:hover .play-btn {
+    opacity: 1;
+}
+
+.play-btn:hover {
+    background-color: #e50914;
+    border-color: #e50914;
+    transform: translate(-50%, -50%) scale(1.1);
 }
 
 .movie-card:hover {
@@ -287,7 +333,8 @@ body {
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
     padding: 10px 12px;
     background-color: #2f2f2f;
     border: 1px solid #444;
@@ -300,13 +347,28 @@ body {
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
     border-color: #e50914;
 }
 
 .form-group input::placeholder,
 .form-group textarea::placeholder {
     color: #888;
+}
+
+.form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.form-group select option {
+    background-color: #1f1f1f;
+    color: #e5e5e5;
 }
 
 .form-hint {

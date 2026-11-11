@@ -92,6 +92,47 @@ public class FilmController {
         return ResponseEntity.ok(details);
     }
 
+    // ── Edit film ──
+
+    @GetMapping("/edit/{id}")
+    public String formularzEdycji(@PathVariable long id, Model model) {
+        Film film = filmStorageService.getFilmById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Film nie znaleziony: " + id));
+        model.addAttribute("film", film);
+        model.addAttribute("videoFiles", filmStorageService.getAvailableVideoFiles());
+        return "edit";
+    }
+
+    @PostMapping("/edit/{id}")
+    public String zapiszEdycje(
+            @PathVariable long id,
+            @RequestParam String title,
+            @RequestParam int year,
+            @RequestParam String director,
+            @RequestParam String genre,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String posterUrl,
+            @RequestParam(required = false) String videoFile) {
+
+        Film film = filmStorageService.getFilmById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Film nie znaleziony: " + id));
+        film.setTitle(title);
+        film.setYear(year);
+        film.setDirector(director);
+        film.setGenre(genre);
+        film.setDescription(description != null ? description : "");
+        film.setVideoFile(videoFile != null && !videoFile.isBlank() ? videoFile : null);
+
+        // Jeśli zmieniono URL plakatu, pobierz nowy
+        if (posterUrl != null && !posterUrl.isBlank()) {
+            String localPoster = posterService.downloadAndSave(id, posterUrl);
+            film.setPosterUrl(localPoster != null ? localPoster : posterUrl);
+        }
+
+        filmStorageService.saveFilm(film);
+        return "redirect:/";
+    }
+
     // ── Delete film ──
 
     @PostMapping("/delete/{id}")

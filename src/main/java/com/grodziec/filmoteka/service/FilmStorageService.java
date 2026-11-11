@@ -10,15 +10,19 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 @Service
 public class FilmStorageService {
 
     private static final String DATA_DIR = "data";
     private static final String FILMS_FILE = DATA_DIR + "/films.json";
+    private static final String FILMS_VIDEO_DIR = DATA_DIR + "/film";
 
     private final ObjectMapper objectMapper;
     private final Path filePath;
@@ -92,6 +96,29 @@ public class FilmStorageService {
                 .toList();
         filmy = Collections.unmodifiableList(updated);
         save();
+    }
+
+    public Optional<Film> getFilmById(long id) {
+        return filmy.stream()
+                .filter(f -> f.getId().equals(id))
+                .findFirst();
+    }
+
+    public List<String> getAvailableVideoFiles() {
+        File dir = new File(FILMS_VIDEO_DIR);
+        if (!dir.exists() || !dir.isDirectory()) {
+            return Collections.emptyList();
+        }
+        String[] extensions = {".mp4", ".mkv", ".avi", ".mov", ".wmv", ".webm", ".flv"};
+        File[] files = dir.listFiles(f -> {
+            String name = f.getName().toLowerCase();
+            return Arrays.stream(extensions).anyMatch(name::endsWith);
+        });
+        if (files == null) return Collections.emptyList();
+        return Arrays.stream(files)
+                .map(File::getName)
+                .sorted()
+                .toList();
     }
 
     private void save() {
