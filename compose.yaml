@@ -1,0 +1,13 @@
+services:
+  filmoteka:
+    image: eclipse-temurin:27-jre-alpine
+    container_name: filmoteka
+    working_dir: /app
+    volumes:
+      - ./filmoteka.jar:/app/filmoteka.jar:ro
+      - ./data:/app/data
+      - /home/minidlna/Videos/Movies:/app/data/film:ro
+    command: ["java", "-jar" , "filmoteka.jar"]
+    ports:
+      - "8081:8080"
+    restart: unless-stopped

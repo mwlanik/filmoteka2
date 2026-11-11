@@ -38,6 +38,7 @@ public class FilmController {
     @GetMapping("/add")
     public String formularzDodawania(Model model) {
         model.addAttribute("film", new Film());
+        model.addAttribute("videoFiles", filmStorageService.getAvailableVideoFiles());
         return "add";
     }
 
@@ -48,7 +49,8 @@ public class FilmController {
             @RequestParam String director,
             @RequestParam String genre,
             @RequestParam(required = false) String description,
-            @RequestParam(required = false) String posterUrl) {
+            @RequestParam(required = false) String posterUrl,
+            @RequestParam(required = false) String videoFile) {
 
         Film film = new Film();
         film.setTitle(title);
@@ -56,6 +58,7 @@ public class FilmController {
         film.setDirector(director);
         film.setGenre(genre);
         film.setDescription(description != null ? description : "");
+        film.setVideoFile(videoFile != null && !videoFile.isBlank() ? videoFile : null);
 
         // Najpierw zapisz film, aby uzyskać ID
         long id = filmStorageService.addFilm(film);

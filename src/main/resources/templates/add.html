@@ -62,6 +62,17 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label for="videoFile">Plik wideo</label>
+                <select id="videoFile" name="videoFile">
+                    <option value="">— wybierz plik wideo —</option>
+                    <option th:each="vf : ${videoFiles}"
+                            th:value="${vf}"
+                            th:text="${vf}"/>
+                </select>
+                <small class="form-hint">Opcjonalne — wybierz plik wideo z katalogu filmów.</small>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn-primary">Dodaj film</button>
                 <a th:href="@{/}" class="btn-secondary">Anuluj</a>
