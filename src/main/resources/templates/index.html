@@ -246,6 +246,32 @@
             });
         })();
 
+        // ── Touch toggle for action buttons on mobile ──
+        (function() {
+            if ('ontouchstart' in window) {
+                document.querySelectorAll('.movie-card').forEach(card => {
+                    card.addEventListener('click', function(e) {
+                        // Jeśli kliknięto przycisk akcji, nie przełączaj klasy
+                        if (e.target.closest('.action-btn') || e.target.closest('.play-btn')) return;
+                        // Usuń klasę .touched ze wszystkich kart
+                        document.querySelectorAll('.movie-card.touched').forEach(c => {
+                            if (c !== this) c.classList.remove('touched');
+                        });
+                        // Przełącz klasę .touched na klikniętej karcie
+                        this.classList.toggle('touched');
+                    });
+                });
+                // Usuń klasę .touched po kliknięciu poza kartę
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.movie-card')) {
+                        document.querySelectorAll('.movie-card.touched').forEach(card => {
+                            card.classList.remove('touched');
+                        });
+                    }
+                });
+            }
+        })();
+
         // ── Chromecast ──
         (function() {
             let castContext;
@@ -316,7 +342,7 @@
                             })
                             .catch(function(error) {
                                 if (error.code !== 'CANCEL') {
-                                    alert('Błąd Chromecast: ' + (error.description || error.code));
+                                    alert('Błąd Chromecast: ' + JSON.stringify(error));
                                 }
                             });
                     });
@@ -339,7 +365,7 @@
                         isCasting = true;
                     })
                     .catch(function(error) {
-                        alert('Nie udało się przesłać filmu na telewizor.\nBłąd: ' + (error.description || error.code));
+                        alert('Nie udało się przesłać filmu na telewizor.\nBłąd: ' + JSON.stringify(error));
                     });
             }
 
