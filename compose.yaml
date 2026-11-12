@@ -3,6 +3,7 @@ services:
     image: eclipse-temurin:27-jre-alpine
     container_name: filmoteka
     working_dir: /app
+    env_file: ./.env
     volumes:
       - ./filmoteka.jar:/app/filmoteka.jar:ro
       - ./data:/app/data

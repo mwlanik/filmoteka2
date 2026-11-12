@@ -1,3 +1,6 @@
 spring:
   application:
     name: filmoteka
+
+tmdb:
+  api-key: ${TMDB_API_KEY:your-api-key-here}

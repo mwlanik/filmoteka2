@@ -51,6 +51,7 @@ public class WebConfig {
         String contentType = MIME_TYPES.getOrDefault(ext, "application/octet-stream");
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .body(resource);
     }
 

@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filmoteka</title>
     <link rel="stylesheet" th:href="@{/style/style.css}">
+    <script>
+        // Ustaw handler przed załadowaniem SDK — wymagane przez Google Cast SDK
+        window['__onGCastApiAvailable'] = function(isLoaded) {
+            if (isLoaded) {
+                window.__castSdkReady();
+            } else {
+                alert('Google Cast nie jest wspierany w tej przeglądarce. Użyj Chrome lub Edge.');
+            }
+        };
+    </script>
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 </head>
 <body>
 
@@ -29,6 +40,8 @@
                 <div class="card-actions">
                     <a class="action-btn edit-btn" th:href="@{'/edit/' + ${film.id}}" title="Edytuj film">✎</a>
                     <button class="action-btn delete-btn" title="Usuń film">✕</button>
+                    <button class="action-btn cast-btn" th:if="${film.videoUrl != null}" th:data-video-url="${film.videoUrl}" title="Prześlij na Chromecast">📺</button>
+                    <button class="action-btn streaming-btn" th:data-film-id="${film.id}" title="Szukaj w serwisach streamingowych">📡</button>
                 </div>
                 <div class="movie-poster">
                     <img th:src="${film.posterUrl}" th:alt="${film.title}" loading="lazy"/>
@@ -44,6 +57,7 @@
                         <span class="movie-genre" th:text="${film.genre}"></span>
                     </div>
                     <p class="movie-director" th:text="'Reżyser: ' + ${film.director}"></p>
+                    <div class="streaming-icons" th:data-film-id="${film.id}"></div>
                 </div>
             </div>
         </div>
@@ -184,6 +198,156 @@
                 }
             });
         });
+
+        // ── Streaming services (TMDb) ──
+        (function() {
+            document.querySelectorAll('.streaming-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const filmId = this.dataset.filmId;
+                    const card = this.closest('.movie-card');
+                    const container = card.querySelector('.streaming-icons');
+                    if (!container) return;
+
+                    // Sprawdź czy już załadowane
+                    if (container.dataset.loaded === 'true') return;
+
+                    // Pokaż spinner
+                    container.innerHTML = '<div class="streaming-loading">⏳</div>';
+
+                    fetch('/api/streaming/' + filmId)
+                        .then(response => response.json())
+                        .then(providers => {
+                            container.dataset.loaded = 'true';
+                            container.innerHTML = '';
+                            if (!providers || providers.length === 0) {
+                                container.innerHTML = '<p class="streaming-empty">Brak dostępnych serwisów w Polsce</p>';
+                                return;
+                            }
+                            providers.forEach(provider => {
+                                const img = document.createElement('img');
+                                if (provider.logoPath) {
+                                    img.src = 'https://image.tmdb.org/t/p/w500' + provider.logoPath;
+                                } else {
+                                    img.src = '';
+                                }
+                                img.alt = provider.providerName;
+                                img.title = provider.providerName;
+                                img.className = 'streaming-icon';
+                                img.loading = 'lazy';
+                                container.appendChild(img);
+                            });
+                        })
+                        .catch(error => {
+                            console.error('Błąd pobierania serwisów streamingowych:', error);
+                            container.innerHTML = '<p class="streaming-empty">Nie udało się pobrać danych</p>';
+                        });
+                });
+            });
+        })();
+
+        // ── Chromecast ──
+        (function() {
+            let castContext;
+            let isCasting = false;
+
+            function initCast() {
+                castContext = cast.framework.CastContext.getInstance();
+
+                const castOptions = new cast.framework.CastOptions();
+                castOptions.receiverApplicationId = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
+                castOptions.autoJoinPolicy = chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED;
+                castContext.setOptions(castOptions);
+
+                // Observer stanu połączenia
+                castContext.addEventListener(
+                    cast.framework.CastContextEventType.CAST_STATE_CHANGED,
+                    function(event) {
+                        const buttons = document.querySelectorAll('.cast-btn');
+                        buttons.forEach(btn => {
+                            if (event.castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+                                btn.disabled = true;
+                                btn.title = 'Chromecast nie wykryty';
+                            } else {
+                                btn.disabled = false;
+                                btn.title = 'Prześlij na telewizor';
+                            }
+                        });
+                    }
+                );
+
+                // Observer stanu sesji — wykrywa istniejącą sesję po odświeżeniu strony
+                castContext.addEventListener(
+                    cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+                    function(event) {
+                        if (event.sessionState === cast.framework.SessionState.CONNECTED) {
+                            console.log('Istniejąca sesja Chromecast wykryta:', event.session.sessionId);
+                        }
+                    }
+                );
+
+                // Handler dla przycisków cast
+                document.querySelectorAll('.cast-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const videoUrl = this.dataset.videoUrl;
+                        if (!videoUrl) return;
+
+                        const fullUrl = window.location.origin + videoUrl;
+                        const card = this.closest('.movie-card');
+                        const title = card.querySelector('.movie-title')?.textContent || '';
+
+                        // Sprawdź czy jest już aktywna sesja
+                        const session = castContext.getCurrentSession();
+                        if (session) {
+                            loadMedia(session, fullUrl, title);
+                            return;
+                        }
+
+                        // Poproś użytkownika o wybór urządzenia
+                        castContext.requestSession()
+                            .then(function() {
+                                const session = castContext.getCurrentSession();
+                                if (session) {
+                                    loadMedia(session, fullUrl, title);
+                                } else {
+                                    alert('Nie udało się utworzyć sesji Chromecast.');
+                                }
+                            })
+                            .catch(function(error) {
+                                if (error.code !== 'CANCEL') {
+                                    alert('Błąd Chromecast: ' + (error.description || error.code));
+                                }
+                            });
+                    });
+                });
+            }
+
+            // Wczytaj media na wybranym urządzeniu
+            function loadMedia(session, fullUrl, title) {
+                const mediaInfo = new cast.framework.messages.MediaInfo();
+                mediaInfo.contentId = fullUrl;
+                mediaInfo.contentType = 'video/mp4';
+                mediaInfo.metadata = new cast.framework.messages.MovieMetadata();
+                mediaInfo.metadata.title = title;
+
+                const request = new cast.framework.messages.LoadRequest();
+                request.media = mediaInfo;
+
+                session.loadMedia(request)
+                    .then(function() {
+                        isCasting = true;
+                    })
+                    .catch(function(error) {
+                        alert('Nie udało się przesłać filmu na telewizor.\nBłąd: ' + (error.description || error.code));
+                    });
+            }
+
+            // Funkcja wywoływana przez handler __onGCastApiAvailable z <head>
+            window.__castSdkReady = function() {
+                initCast();
+            };
+        })();
 
     </script>
 

@@ -4,6 +4,7 @@ import com.grodziec.filmoteka.model.Film;
 import com.grodziec.filmoteka.service.FilmStorageService;
 import com.grodziec.filmoteka.service.FilmwebService;
 import com.grodziec.filmoteka.service.PosterService;
+import com.grodziec.filmoteka.service.TmdbService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,11 +18,13 @@ public class FilmController {
     private final FilmStorageService filmStorageService;
     private final PosterService posterService;
     private final FilmwebService filmwebService;
+    private final TmdbService tmdbService;
 
-    public FilmController(FilmStorageService filmStorageService, PosterService posterService, FilmwebService filmwebService) {
+    public FilmController(FilmStorageService filmStorageService, PosterService posterService, FilmwebService filmwebService, TmdbService tmdbService) {
         this.filmStorageService = filmStorageService;
         this.posterService = posterService;
         this.filmwebService = filmwebService;
+        this.tmdbService = tmdbService;
     }
 
     @GetMapping("/")
@@ -145,6 +148,21 @@ public class FilmController {
     public String usunFilm(@PathVariable long id) {
         filmStorageService.removeFilm(id);
         return "redirect:/";
+    }
+
+    // ── Streaming services (TMDb) ──
+
+    @GetMapping("/api/streaming/{filmId}")
+    @ResponseBody
+    public ResponseEntity<List<TmdbService.TmdbWatchProvider>> getStreamingServices(@PathVariable long filmId) {
+        Film film = filmStorageService.getFilmById(filmId)
+                .orElseThrow(() -> new IllegalArgumentException("Film nie znaleziony: " + filmId));
+        TmdbService.TmdbSearchResult searchResult = tmdbService.searchMovie(film.getTitle());
+        if (searchResult == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        List<TmdbService.TmdbWatchProvider> providers = tmdbService.getWatchProviders(searchResult.getId(), "PL");
+        return ResponseEntity.ok(providers);
     }
 
     private String generatePlaceholder(String title) {
