@@ -60,6 +60,30 @@ body {
     border-color: #e50914;
 }
 
+/* ── Sort Button ── */
+
+.sort-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s ease;
+}
+
+.sort-btn:hover {
+    color: #e50914;
+}
+
+.navbar-search {
+    position: relative;
+}
+
 /* ── Navbar Navigation ── */
 
 .navbar-nav {
@@ -80,6 +104,54 @@ body {
 
 .nav-button:hover {
     background-color: #f6121d;
+}
+
+/* ── Genre Filters ── */
+
+.genre-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 48px 16px;
+}
+
+.genre-btn {
+    padding: 6px 16px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid #555;
+    border-radius: 20px;
+    color: #e5e5e5;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.genre-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: #888;
+}
+
+.genre-btn.active {
+    background-color: #e50914;
+    border-color: #e50914;
+    color: #fff;
+}
+
+/* Przycisk filtru wideo — wyróżniony pomarańczowym kolorem */
+.video-filter-btn {
+    border-color: #ff9800;
+    color: #ff9800;
+}
+
+.video-filter-btn:hover {
+    background-color: rgba(255, 152, 0, 0.15);
+    border-color: #ff9800;
+}
+
+.video-filter-btn.active {
+    background-color: #ff9800;
+    border-color: #ff9800;
+    color: #141414;
 }
 
 /* ── Container ── */
@@ -375,6 +447,14 @@ body {
     font-size: 12px;
     color: #888;
     margin-top: 2px;
+}
+
+.form-warning {
+    display: none;
+    font-size: 12px;
+    color: #e50914;
+    margin-top: 2px;
+    font-weight: 600;
 }
 
 /* ── Form Row (side-by-side fields) ── */

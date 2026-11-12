@@ -6,6 +6,9 @@ import com.grodziec.filmoteka.model.Film;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,6 +22,8 @@ import java.util.stream.Stream;
 
 @Service
 public class FilmStorageService {
+
+    private static final Logger log = LoggerFactory.getLogger(FilmStorageService.class);
 
     private static final String DATA_DIR = "data";
     private static final String FILMS_FILE = DATA_DIR + "/films.json";
@@ -39,12 +44,14 @@ public class FilmStorageService {
 
     @PostConstruct
     public void init() {
+        log.info("FilmStorageService: inicjalizacja, ścieżka pliku: {}", filePath);
         load();
     }
 
     public synchronized void load() {
         File file = filePath.toFile();
         if (!file.exists() || file.length() == 0) {
+            log.info("FilmStorageService: plik {} nie istnieje lub jest pusty — pusta lista filmów", filePath);
             filmy = Collections.emptyList();
             nextId.set(1L);
             return;
@@ -59,8 +66,10 @@ public class FilmStorageService {
                         .max()
                         .orElse(0L);
                 nextId.set(maxId + 1);
+                log.info("FilmStorageService: załadowano {} filmów z {}, następne ID: {}", filmy.size(), filePath, nextId.get());
             }
         } catch (IOException e) {
+            log.error("FilmStorageService: błąd odczytu {} — pusta lista filmów", filePath, e);
             filmy = Collections.emptyList();
             nextId.set(1L);
         }
@@ -104,7 +113,25 @@ public class FilmStorageService {
                 .findFirst();
     }
 
+    /**
+     * Sprawdza czy film o podanym tytule już istnieje (case-insensitive).
+     */
+    public boolean titleExists(String title) {
+        String query = title.toLowerCase().trim();
+        return filmy.stream()
+                .anyMatch(f -> f.getTitle().toLowerCase().equals(query));
+    }
+
     public List<String> getAvailableVideoFiles() {
+        return getAvailableVideoFiles(null);
+    }
+
+    /**
+     * Zwraca listę plików wideo z katalogu, wykluczając te już przypisane do innych filmów.
+     * @param excludeFilmId jeśli podany, film o tym ID jest ignorowany przy filtrowaniu
+     *                      (np. przy edycji, aby można było zmienić plik wideo).
+     */
+    public List<String> getAvailableVideoFiles(Long excludeFilmId) {
         File dir = new File(FILMS_VIDEO_DIR);
         if (!dir.exists() || !dir.isDirectory()) {
             return Collections.emptyList();
@@ -115,8 +142,17 @@ public class FilmStorageService {
             return Arrays.stream(extensions).anyMatch(name::endsWith);
         });
         if (files == null) return Collections.emptyList();
+
+        // Zbierz pliki wideo już przypisane do filmów (poza wykluczonym)
+        List<String> assignedFiles = filmy.stream()
+                .filter(f -> excludeFilmId == null || !f.getId().equals(excludeFilmId))
+                .map(Film::getVideoFile)
+                .filter(v -> v != null && !v.isEmpty())
+                .toList();
+
         return Arrays.stream(files)
                 .map(File::getName)
+                .filter(name -> !assignedFiles.contains(name))
                 .sorted()
                 .toList();
     }
@@ -125,7 +161,9 @@ public class FilmStorageService {
         try {
             Files.createDirectories(filePath.getParent());
             objectMapper.writeValue(filePath.toFile(), filmy.toArray(new Film[0]));
+            log.info("FilmStorageService: zapisano {} filmów do {}", filmy.size(), filePath);
         } catch (IOException e) {
+            log.error("FilmStorageService: błąd zapisu do {}", filePath, e);
             throw new RuntimeException("Nie udało się zapisać filmów do JSON", e);
         }
     }

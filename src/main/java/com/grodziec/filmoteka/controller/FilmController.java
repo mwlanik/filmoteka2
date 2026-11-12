@@ -7,12 +7,7 @@ import com.grodziec.filmoteka.service.PosterService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -95,6 +90,14 @@ public class FilmController {
         return ResponseEntity.ok(details);
     }
 
+    // ── Check duplicate title ──
+
+    @GetMapping("/api/check-title")
+    @ResponseBody
+    public boolean checkTitleExists(@RequestParam String title) {
+        return filmStorageService.titleExists(title);
+    }
+
     // ── Edit film ──
 
     @GetMapping("/edit/{id}")
@@ -102,7 +105,7 @@ public class FilmController {
         Film film = filmStorageService.getFilmById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Film nie znaleziony: " + id));
         model.addAttribute("film", film);
-        model.addAttribute("videoFiles", filmStorageService.getAvailableVideoFiles());
+        model.addAttribute("videoFiles", filmStorageService.getAvailableVideoFiles(id));
         return "edit";
     }
 

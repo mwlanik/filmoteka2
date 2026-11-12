@@ -12,6 +12,7 @@
         <div class="navbar-brand">FILMOTeka</div>
         <div class="navbar-search">
             <input type="text" id="searchInput" class="search-input" placeholder="Szukaj filmów...">
+            <button type="button" id="sortBtn" class="sort-btn" title="Sortuj po tytule (A→Z / Z→A)">⇅</button>
         </div>
         <nav class="navbar-nav">
             <a th:href="@{/add}" class="nav-button">+ Dodaj film</a>
@@ -20,6 +21,8 @@
 
     <main class="container">
         <h1 class="section-title">Oglądaj teraz</h1>
+
+        <div class="genre-filters" id="genreFilters"></div>
 
         <div class="movie-grid">
             <div class="movie-card" th:each="film : ${filmy}" th:data-id="${film.id}" th:data-title="${film.title}">
@@ -47,17 +50,123 @@
     </main>
 
     <script>
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            const query = e.target.value.toLowerCase().trim();
-            const cards = document.querySelectorAll('.movie-card');
-            cards.forEach(card => {
+        const grid = document.querySelector('.movie-grid');
+        let sortAsc = true; // domyślnie A→Z
+        let activeGenre = 'all'; // filtr gatunku: 'all' = wszystkie
+        let activeVideoFilter = 'all'; // filtr wideo: 'all' = wszystkie, 'with' = z plikiem
+
+        // Pobierz unikalne gatunki (pojedyncze) i wygeneruj przyciski filtrów
+        (function() {
+            const genres = new Set();
+            document.querySelectorAll('.movie-card').forEach(card => {
+                const genreText = card.querySelector('.movie-genre')?.textContent.trim();
+                if (genreText) {
+                    // Rozdziel gatunki po przecinku: "Komedia, Sensacyjny" → ["Komedia", "Sensacyjny"]
+                    genreText.split(',').forEach(g => {
+                        const trimmed = g.trim();
+                        if (trimmed) genres.add(trimmed);
+                    });
+                }
+            });
+            const filtersDiv = document.getElementById('genreFilters');
+            const allBtn = document.createElement('button');
+            allBtn.type = 'button';
+            allBtn.className = 'genre-btn active';
+            allBtn.textContent = 'Wszystkie';
+            allBtn.dataset.genre = 'all';
+            filtersDiv.appendChild(allBtn);
+            Array.from(genres).sort((a, b) => a.localeCompare(b, 'pl')).forEach(genre => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'genre-btn';
+                btn.textContent = genre;
+                btn.dataset.genre = genre;
+                filtersDiv.appendChild(btn);
+            });
+            filtersDiv.addEventListener('click', function(e) {
+                const btn = e.target.closest('.genre-btn');
+                if (!btn) return;
+                // Ignoruj przycisk filtru wideo — ma własny handler
+                if (btn.classList.contains('video-filter-btn')) return;
+                this.querySelectorAll('.genre-btn:not(.video-filter-btn)').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeGenre = btn.dataset.genre;
+                applyFilters();
+            });
+        })();
+
+        // Przycisk filtru "Z plikiem wideo"
+        (function() {
+            const filtersDiv = document.getElementById('genreFilters');
+            const videoBtn = document.createElement('button');
+            videoBtn.type = 'button';
+            videoBtn.className = 'genre-btn video-filter-btn';
+            videoBtn.textContent = '▶ Z plikiem wideo';
+            videoBtn.dataset.filter = 'video';
+            filtersDiv.appendChild(videoBtn);
+            videoBtn.addEventListener('click', function() {
+                if (activeVideoFilter === 'all') {
+                    activeVideoFilter = 'with';
+                    this.classList.add('active');
+                } else {
+                    activeVideoFilter = 'all';
+                    this.classList.remove('active');
+                }
+                applyFilters();
+            });
+        })();
+
+        // Zastosuj filtry: gatunek + wideo + wyszukiwarka
+        function applyFilters() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            document.querySelectorAll('.movie-card').forEach(card => {
                 const title = card.querySelector('.movie-title')?.textContent.toLowerCase() || '';
                 const director = card.querySelector('.movie-director')?.textContent.toLowerCase() || '';
-                const genre = card.querySelector('.movie-genre')?.textContent.toLowerCase() || '';
+                const genreText = card.querySelector('.movie-genre')?.textContent.trim() || '';
+                const genre = genreText.toLowerCase();
                 const year = card.querySelector('.movie-year')?.textContent.toLowerCase() || '';
-                const match = !query || title.includes(query) || director.includes(query) || genre.includes(query) || year.includes(query);
-                card.style.display = match ? '' : 'none';
+                // Sprawdzamy czy którykolwiek z pojedynczych gatunków karty pasuje do aktywnego filtru
+                const cardGenres = genreText.split(',').map(g => g.trim());
+                const genreMatch = activeGenre === 'all' || cardGenres.includes(activeGenre);
+                // Filtr wideo: czy karta ma przycisk odtwarzania (▶)
+                const hasVideo = card.querySelector('.play-btn') !== null;
+                const videoMatch = activeVideoFilter === 'all' || hasVideo;
+                const searchMatch = !query || title.includes(query) || director.includes(query) || genre.includes(query) || year.includes(query);
+                card.style.display = (genreMatch && videoMatch && searchMatch) ? '' : 'none';
             });
+        }
+
+        // Domyślne sortowanie alfabetyczne przy załadowaniu strony
+        (function() {
+            const cards = Array.from(grid.querySelectorAll('.movie-card'));
+            cards.sort((a, b) => {
+                const titleA = a.querySelector('.movie-title')?.textContent || '';
+                const titleB = b.querySelector('.movie-title')?.textContent || '';
+                return titleA.localeCompare(titleB, 'pl');
+            });
+            cards.forEach(card => grid.appendChild(card));
+        })();
+
+        // Po domyślnym sortowaniu A→Z, ustaw sortAsc=false,
+        // żeby pierwsze kliknięcie przycisku zastosowało sortowanie odwrotne (Z→A).
+        sortAsc = false;
+
+        document.getElementById('searchInput').addEventListener('input', function() {
+            applyFilters();
+        });
+
+        document.getElementById('sortBtn').addEventListener('click', function() {
+            const cards = Array.from(grid.querySelectorAll('.movie-card'));
+            cards.sort((a, b) => {
+                const titleA = a.querySelector('.movie-title')?.textContent || '';
+                const titleB = b.querySelector('.movie-title')?.textContent || '';
+                return sortAsc
+                    ? titleA.localeCompare(titleB, 'pl')
+                    : titleB.localeCompare(titleA, 'pl');
+            });
+            cards.forEach(card => grid.appendChild(card));
+            sortAsc = !sortAsc;
+            this.title = sortAsc ? 'Sortuj po tytule (A→Z)' : 'Sortuj po tytule (Z→A)';
         });
 
         document.querySelectorAll('.delete-btn').forEach(btn => {

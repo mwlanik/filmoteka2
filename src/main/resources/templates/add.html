@@ -26,6 +26,7 @@
                     <div id="search-results" class="autocomplete-dropdown"></div>
                 </div>
                 <small class="form-hint">Wpisz tytuł — sugestie z Filmwebu wypełnią pozostałe pola.</small>
+                <small class="form-warning" id="titleWarning" style="display:none;">⚠ Film o tym tytule już istnieje w Twojej kolekcji.</small>
             </div>
 
             <div class="form-row">
@@ -85,6 +86,7 @@
         const titleInput = document.getElementById('title');
         const dropdown = document.getElementById('search-results');
         let searchTimeout = null;
+        let checkTitleTimeout = null;
 
         titleInput.addEventListener('input', function() {
             const query = this.value.trim();
@@ -92,10 +94,15 @@
 
             if (query.length < 2) {
                 hideDropdown();
+                document.getElementById('titleWarning').style.display = 'none';
                 return;
             }
 
             searchTimeout = setTimeout(() => searchFilms(query), 300);
+
+            // Sprawdź czy tytuł już istnieje w kolekcji
+            clearTimeout(checkTitleTimeout);
+            checkTitleTimeout = setTimeout(() => checkDuplicateTitle(query), 400);
         });
 
         titleInput.addEventListener('keydown', function(e) {
@@ -215,6 +222,18 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function checkDuplicateTitle(title) {
+            const warning = document.getElementById('titleWarning');
+            fetch('/api/check-title?title=' + encodeURIComponent(title))
+                .then(res => res.json())
+                .then(exists => {
+                    warning.style.display = exists ? 'block' : 'none';
+                })
+                .catch(() => {
+                    warning.style.display = 'none';
+                });
         }
     })();
     </script>

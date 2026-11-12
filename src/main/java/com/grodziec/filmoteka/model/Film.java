@@ -1,5 +1,6 @@
 package com.grodziec.filmoteka.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.net.URLEncoder;
@@ -19,7 +20,9 @@ public class Film {
    /**
     * Gotowy URL do odtwarzania pliku wideo, z zakodowaną nazwą pliku.
     * Używany w szablonach Thymeleaf, gdzie dostęp do statycznych klas jest zablokowany.
+    * @JsonIgnore — nie serializować do JSON, bo nie ma odpowiadającego pola.
     */
+   @JsonIgnore
    public String getVideoUrl() {
        if (videoFile == null || videoFile.isEmpty()) {
            return null;
